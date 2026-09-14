@@ -1,0 +1,1006 @@
+openapi: 3.0.3
+info:
+  title: Shelfline
+  version: 0.1.0
+  description: >-
+    Banking-as-a-platform product shelf for capital-aware deposit, lending, and
+    payment SKUs distributed through partner channels with experience-ownership rules.
+  x-product-slug: ai-fin-shelfline
+  x-source: ai-in-financial/WEF_The_future__of_financial_services/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Skus
+    description: Product SKU publishing and catalog
+  - name: Distributors
+    description: Distributor registry and contracts
+  - name: Originations
+    description: Partner-originated applications and adjudication
+  - name: Throttles
+    description: Treasury and risk caps
+  - name: Telemetry
+    description: Margin and CAC scorecards
+  - name: Complaints
+    description: Complaint ownership and redress
+  - name: Breaches
+    description: Shadow pricing and conduct breaches
+paths:
+  /v1/skus:
+    get:
+      operationId: listProductSkus
+      tags: [Skus]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, paused, retired]
+      responses:
+        "200":
+          description: SKUs page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeProductSku"
+    post:
+      operationId: createProductSku
+      tags: [Skus]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSkuCreate"
+      responses:
+        "201":
+          description: SKU created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProductSku"
+  /v1/skus/{skuId}:
+    parameters:
+      - $ref: "#/components/parameters/SkuId"
+    get:
+      operationId: getProductSku
+      tags: [Skus]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        "200":
+          description: SKU
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProductSku"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/skus/{skuId}/publish:
+    parameters:
+      - $ref: "#/components/parameters/SkuId"
+    post:
+      operationId: publishProductSku
+      tags: [Skus]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: SKU published to catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProductSku"
+  /v1/skus/{skuId}/rate-cards:
+    parameters:
+      - $ref: "#/components/parameters/SkuId"
+    post:
+      operationId: upsertRateCard
+      tags: [Skus]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateCard"
+      responses:
+        "201":
+          description: Rate card saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeRateCard"
+  /v1/distributors:
+    get:
+      operationId: listDistributors
+      tags: [Distributors]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Distributors page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeDistributor"
+    post:
+      operationId: registerDistributor
+      tags: [Distributors]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistributorCreate"
+      responses:
+        "201":
+          description: Distributor registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeDistributor"
+  /v1/distributors/{distributorId}/contracts:
+    parameters:
+      - $ref: "#/components/parameters/DistributorId"
+    post:
+      operationId: createDistributionContract
+      tags: [Distributors]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DistributionContract"
+      responses:
+        "201":
+          description: Contract created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeDistributionContract"
+  /v1/distributors/{distributorId}/pause:
+    parameters:
+      - $ref: "#/components/parameters/DistributorId"
+    post:
+      operationId: pauseDistributor
+      tags: [Distributors]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        "202":
+          description: Distributor paused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeDistributor"
+  /v1/originations:
+    get:
+      operationId: listOriginationApplications
+      tags: [Originations]
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Applications page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeOriginationApplication"
+    post:
+      operationId: submitOriginationApplication
+      tags: [Originations]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OriginationApplicationCreate"
+      responses:
+        "201":
+          description: Application accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeOriginationApplication"
+        "409":
+          description: Throttled or exposure blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/originations/{applicationId}/decision:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    post:
+      operationId: recordAdjudicationDecision
+      tags: [Originations]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjudicationDecision"
+      responses:
+        "201":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeAdjudicationDecision"
+  /v1/throttles:
+    get:
+      operationId: listThrottleEvents
+      tags: [Throttles]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Throttle events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeThrottleEvent"
+    post:
+      operationId: upsertLiquidityCap
+      tags: [Throttles]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiquidityCap"
+      responses:
+        "201":
+          description: Liquidity cap saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeLiquidityCap"
+  /v1/telemetry/margin:
+    get:
+      operationId: listMarginSnapshots
+      tags: [Telemetry]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema: { type: string, example: "2026-08" }
+      responses:
+        "200":
+          description: Margin snapshots
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeMarginSnapshot"
+  /v1/telemetry/cac:
+    get:
+      operationId: listCacReports
+      tags: [Telemetry]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: CAC reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeCacReport"
+  /v1/complaints:
+    post:
+      operationId: openShelfComplaint
+      tags: [Complaints]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintCaseCreate"
+      responses:
+        "201":
+          description: Complaint opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeComplaintCase"
+  /v1/breaches:
+    get:
+      operationId: listBreachEvents
+      tags: [Breaches]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Breach events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeBreachEvent"
+    post:
+      operationId: recordBreachEvent
+      tags: [Breaches]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BreachEventCreate"
+      responses:
+        "201":
+          description: Breach recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeBreachEvent"
+  /v1/exposure-signals:
+    post:
+      operationId: ingestExposureSignal
+      tags: [Originations]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExposureSignal"
+      responses:
+        "202":
+          description: Exposure signal accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeExposureSignal"
+components:
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+    SkuId:
+      name: skuId
+      in: path
+      required: true
+      schema: { type: string }
+    DistributorId:
+      name: distributorId
+      in: path
+      required: true
+      schema: { type: string }
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: Validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+    ProductSku:
+      type: object
+      required: [id, name, productFamily, role, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        productFamily:
+          type: string
+          enum: [deposit, lending, payment]
+        role:
+          type: string
+          enum: [manufacturer, distributor, both]
+        status:
+          type: string
+          enum: [draft, published, paused, retired]
+        adjudicationMode:
+          type: string
+          enum: [bank, partner, dual]
+        capitalConstraintId: { type: string }
+        liquidityCapId: { type: string }
+    ProductSkuCreate:
+      type: object
+      required: [name, productFamily, role]
+      properties:
+        name: { type: string }
+        productFamily:
+          type: string
+          enum: [deposit, lending, payment]
+        role:
+          type: string
+          enum: [manufacturer, distributor, both]
+        adjudicationMode:
+          type: string
+          enum: [bank, partner, dual]
+    CapitalConstraint:
+      type: object
+      required: [id, skuId, maxVolume, currency]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        maxVolume: { type: number, format: double }
+        currency: { type: string }
+        rwaWeightHint: { type: number, format: float }
+    LiquidityCap:
+      type: object
+      required: [id, skuId, maxBalance, tenureBand]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        maxBalance: { type: number, format: double }
+        tenureBand: { type: string }
+        warningThresholdPct: { type: number, format: float }
+    Distributor:
+      type: object
+      required: [id, legalName, status]
+      properties:
+        id: { type: string }
+        legalName: { type: string }
+        status:
+          type: string
+          enum: [active, paused, pending, terminated]
+        channelType:
+          type: string
+          enum: [fintech, bigtech, broker, bankDirect]
+    DistributorCreate:
+      type: object
+      required: [legalName, channelType]
+      properties:
+        legalName: { type: string }
+        channelType:
+          type: string
+          enum: [fintech, bigtech, broker, bankDirect]
+    DistributionContract:
+      type: object
+      required: [id, distributorId, skuId, revenueSharePct, brandOwner, complaintOwner]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        skuId: { type: string }
+        revenueSharePct: { type: number, format: float }
+        manufacturingPrice: { type: number, format: double }
+        brandOwner:
+          type: string
+          enum: [bank, distributor, coBrand]
+        complaintOwner:
+          type: string
+          enum: [bank, distributor]
+        recommendationBiasLimit: { type: string }
+    RateCard:
+      type: object
+      required: [id, skuId, rate, approvedMin, approvedMax]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        rate: { type: number, format: double }
+        approvedMin: { type: number, format: double }
+        approvedMax: { type: number, format: double }
+        effectiveFrom: { type: string, format: date-time }
+    OriginationApplication:
+      type: object
+      required: [id, skuId, distributorId, status]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        distributorId: { type: string }
+        amount: { type: number, format: double }
+        status:
+          type: string
+          enum: [submitted, pendingDecision, approved, declined, throttled, booked]
+    OriginationApplicationCreate:
+      type: object
+      required: [skuId, distributorId, amount, applicantRef]
+      properties:
+        skuId: { type: string }
+        distributorId: { type: string }
+        amount: { type: number, format: double }
+        applicantRef: { type: string }
+    AdjudicationDecision:
+      type: object
+      required: [id, applicationId, outcome, decidedBy]
+      properties:
+        id: { type: string }
+        applicationId: { type: string }
+        outcome:
+          type: string
+          enum: [approved, declined, refer]
+        decidedBy:
+          type: string
+          enum: [bank, partner, dual]
+        adverseActionCode: { type: string }
+        decidedAt: { type: string, format: date-time }
+    ThrottleEvent:
+      type: object
+      required: [id, skuId, reason, firedAt]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        distributorId: { type: string }
+        reason:
+          type: string
+          enum: [liquidityCap, capitalCap, concentration, fraud]
+        firedAt: { type: string, format: date-time }
+    MarginSnapshot:
+      type: object
+      required: [id, distributorId, skuId, period, contributionMargin]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        skuId: { type: string }
+        period: { type: string }
+        contributionMargin: { type: number, format: double }
+        nimImpactBps: { type: number, format: float }
+    CacReport:
+      type: object
+      required: [id, distributorId, period, cac]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        segment: { type: string }
+        period: { type: string }
+        cac: { type: number, format: double }
+        volume: { type: integer }
+    ComplaintCase:
+      type: object
+      required: [id, distributorId, accountableParty, status]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        applicationId: { type: string }
+        accountableParty:
+          type: string
+          enum: [bank, distributor]
+        status:
+          type: string
+          enum: [open, investigating, resolved]
+        openedAt: { type: string, format: date-time }
+    ComplaintCaseCreate:
+      type: object
+      required: [distributorId, narrative]
+      properties:
+        distributorId: { type: string }
+        applicationId: { type: string }
+        narrative: { type: string }
+    BreachEvent:
+      type: object
+      required: [id, distributorId, type, status]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        type:
+          type: string
+          enum: [shadowPricing, disclosureFailure, brandMisuse]
+        status:
+          type: string
+          enum: [open, remediated, escalated]
+        detectedAt: { type: string, format: date-time }
+    BreachEventCreate:
+      type: object
+      required: [distributorId, type, detail]
+      properties:
+        distributorId: { type: string }
+        type:
+          type: string
+          enum: [shadowPricing, disclosureFailure, brandMisuse]
+        detail: { type: string }
+    ExposureSignal:
+      type: object
+      required: [id, applicantRef, totalLeverage]
+      properties:
+        id: { type: string }
+        applicantRef: { type: string }
+        totalLeverage: { type: number, format: double }
+        source: { type: string }
+        blocked: { type: boolean }
+
+    DataEnvelopeProductSku:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ProductSku"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeProductSku:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductSku"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeRateCard:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/RateCard"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeRateCard:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/RateCard"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeDistributor:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/Distributor"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeDistributor:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Distributor"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeDistributionContract:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/DistributionContract"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeDistributionContract:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/DistributionContract"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeOriginationApplication:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/OriginationApplication"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeOriginationApplication:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/OriginationApplication"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeAdjudicationDecision:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/AdjudicationDecision"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeAdjudicationDecision:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdjudicationDecision"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeThrottleEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ThrottleEvent"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeThrottleEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ThrottleEvent"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeLiquidityCap:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/LiquidityCap"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeLiquidityCap:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/LiquidityCap"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeMarginSnapshot:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/MarginSnapshot"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeMarginSnapshot:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/MarginSnapshot"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeCacReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/CacReport"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeCacReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CacReport"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeComplaintCase:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ComplaintCase"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeComplaintCase:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ComplaintCase"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeBreachEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/BreachEvent"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeBreachEvent:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/BreachEvent"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
+
+    DataEnvelopeExposureSignal:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          $ref: "#/components/schemas/ExposureSignal"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+    ListEnvelopeExposureSignal:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExposureSignal"
+            nextCursor: { type: string }
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+
