@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Throttles API
+  version: 0.1.0
+  description: |
+    Treasury and risk liquidity caps, throttle events, force throttle, and release.
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: thr
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Throttles
+    description: Treasury and risk caps
+paths:
+  /v1/throttles/caps:
+    get:
+      operationId: listLiquidityCaps
+      tags: [Throttles]
+      summary: List liquidity caps
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: Treasury caps }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: skuId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Caps page
+          content:
+            application/json:
+              schema:
+                $ref: ./throttles.schemas.yaml#/components/schemas/LiquidityCapListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    put:
+      operationId: upsertLiquidityCap
+      tags: [Throttles]
+      summary: Upsert liquidity cap
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: LIQUIDITY_CAP
+      x-dynamodb:
+        entityType: "LIQUIDITY_CAP"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "CAP#${tenureBand}"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./throttles.schemas.yaml#/components/schemas/LiquidityCapUpsert
+      responses:
+        '200':
+          description: Cap saved
+          content:
+            application/json:
+              schema:
+                $ref: ./throttles.schemas.yaml#/components/schemas/LiquidityCapResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/throttles/events:
+    get:
+      operationId: listThrottleEvents
+      tags: [Throttles]
+      summary: List throttle events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: skuId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Events page
+          content:
+            application/json:
+              schema:
+                $ref: ./throttles.schemas.yaml#/components/schemas/ThrottleEventListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/throttles/force:
+    post:
+      operationId: forceThrottle
+      tags: [Throttles]
+      summary: Force throttle on SKU or distributor
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./throttles.schemas.yaml#/components/schemas/ForceThrottleRequest
+      responses:
+        '201':
+          description: Throttle fired
+          content:
+            application/json:
+              schema:
+                $ref: ./throttles.schemas.yaml#/components/schemas/ThrottleEventResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/throttles/release:
+    post:
+      operationId: releaseThrottle
+      tags: [Throttles]
+      summary: Release an active throttle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./throttles.schemas.yaml#/components/schemas/ReleaseThrottleRequest
+      responses:
+        '200':
+          description: Throttle released
+          content:
+            application/json:
+              schema:
+                $ref: ./throttles.schemas.yaml#/components/schemas/ThrottleEventResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: Telemetry schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    MarginSnapshot:
+      type: object
+      required: [id, distributorId, skuId, period, contributionMargin]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        skuId: { type: string }
+        period: { type: string }
+        contributionMargin: { type: number, format: double }
+        nimImpactBps: { type: number, format: float }
+        killScaleHint:
+          type: string
+          enum: [kill, scale, hold]
+
+    CacReport:
+      type: object
+      required: [id, distributorId, period, cac]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        segment: { type: string }
+        period: { type: string }
+        cac: { type: number, format: double }
+        volume: { type: integer }
+
+    MarginSnapshotResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/MarginSnapshot'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    MarginSnapshotListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarginSnapshot'
+        nextCursor:
+          type: string
+
+    MarginSnapshotListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/MarginSnapshotListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    CacReportResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CacReport'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CacReportListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CacReport'
+        nextCursor:
+          type: string
+
+    CacReportListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CacReportListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

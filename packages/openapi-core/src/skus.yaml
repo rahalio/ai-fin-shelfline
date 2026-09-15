@@ -1,0 +1,418 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Skus API
+  version: 0.1.0
+  description: |
+    Product SKU publishing, capital constraints, rate cards, and lifecycle (publish/pause/resume/retire).
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: sku
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Skus
+    description: Product SKU publishing and catalog
+paths:
+  /v1/skus:
+    get:
+      operationId: listProductSkus
+      tags: [Skus]
+      summary: List product SKUs
+      x-zero-ui:
+        label: { en: SKU catalog }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./skus.schemas.yaml#/components/schemas/SkuStatus
+        - name: productFamily
+          in: query
+          schema:
+            $ref: ./skus.schemas.yaml#/components/schemas/ProductFamily
+      responses:
+        '200':
+          description: SKUs page
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createProductSku
+      tags: [Skus]
+      summary: Create draft SKU
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: PRODUCT_SKU
+      x-dynamodb:
+        entityType: "PRODUCT_SKU"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuCreate
+      responses:
+        '201':
+          description: SKU created
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getProductSku
+      tags: [Skus]
+      summary: Get SKU
+      x-repository: PRODUCT_SKU
+      x-dynamodb:
+        entityType: "PRODUCT_SKU"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      responses:
+        '200':
+          description: SKU
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    patch:
+      operationId: updateProductSku
+      tags: [Skus]
+      summary: Update SKU metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: PRODUCT_SKU
+      x-dynamodb:
+        entityType: "PRODUCT_SKU"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuUpdate
+      responses:
+        '200':
+          description: SKU updated
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/publish:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: publishProductSku
+      tags: [Skus]
+      summary: Publish SKU (requires capital bounds)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      responses:
+        '200':
+          description: SKU published
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/pause:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: pauseProductSku
+      tags: [Skus]
+      summary: Pause SKU without deploy
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/PauseResumeRequest
+      responses:
+        '200':
+          description: SKU paused
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/resume:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: resumeProductSku
+      tags: [Skus]
+      summary: Resume paused SKU
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/PauseResumeRequest
+      responses:
+        '200':
+          description: SKU resumed
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/retire:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: retireProductSku
+      tags: [Skus]
+      summary: Retire SKU from catalog
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      responses:
+        '200':
+          description: SKU retired
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/ProductSkuResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/capital-constraint:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getSkuCapitalConstraint
+      tags: [Skus]
+      summary: Get capital constraint for SKU
+      x-repository: CAPITAL_CONSTRAINT
+      x-dynamodb:
+        entityType: "CAPITAL_CONSTRAINT"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "CAPITAL"
+        pkPattern: template
+      responses:
+        '200':
+          description: Capital constraint
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/CapitalConstraintResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    put:
+      operationId: upsertSkuCapitalConstraint
+      tags: [Skus]
+      summary: Attach or replace capital constraint
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: CAPITAL_CONSTRAINT
+      x-dynamodb:
+        entityType: "CAPITAL_CONSTRAINT"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "CAPITAL"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/CapitalConstraintUpsert
+      responses:
+        '200':
+          description: Capital constraint saved
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/CapitalConstraintResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/skus/{skuId}/rate-cards:
+    parameters:
+      - name: skuId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listSkuRateCards
+      tags: [Skus]
+      summary: List rate cards for SKU
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Rate cards
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/RateCardListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: upsertRateCard
+      tags: [Skus]
+      summary: Upsert rate card within approved bands
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: RATE_CARD
+      x-dynamodb:
+        entityType: "RATE_CARD"
+        pkPatternTemplate: "SKU#${skuId}"
+        skPatternTemplate: "RATE#${rateCardId}"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./skus.schemas.yaml#/components/schemas/RateCardUpsert
+      responses:
+        '201':
+          description: Rate card saved
+          content:
+            application/json:
+              schema:
+                $ref: ./skus.schemas.yaml#/components/schemas/RateCardResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

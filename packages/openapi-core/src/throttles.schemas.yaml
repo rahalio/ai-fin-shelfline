@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Throttles schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ThrottleReason:
+      type: string
+      enum: [liquidityCap, capitalCap, concentration, fraud]
+
+    LiquidityCap:
+      type: object
+      required: [id, skuId, maxBalance, tenureBand]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        maxBalance: { type: number, format: double }
+        tenureBand: { type: string }
+        warningThresholdPct: { type: number, format: float }
+        utilisationPct: { type: number, format: float }
+
+    LiquidityCapUpsert:
+      type: object
+      required: [skuId, maxBalance, tenureBand]
+      properties:
+        skuId: { type: string }
+        maxBalance: { type: number, format: double }
+        tenureBand: { type: string }
+        warningThresholdPct: { type: number, format: float }
+
+    ThrottleEvent:
+      type: object
+      required: [id, skuId, reason, firedAt]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        distributorId: { type: string }
+        reason: { $ref: '#/components/schemas/ThrottleReason' }
+        firedAt: { type: string, format: date-time }
+        releasedAt: { type: string, format: date-time }
+
+    ForceThrottleRequest:
+      type: object
+      required: [skuId, reason]
+      properties:
+        skuId: { type: string }
+        distributorId: { type: string }
+        reason: { $ref: '#/components/schemas/ThrottleReason' }
+
+    ReleaseThrottleRequest:
+      type: object
+      required: [throttleEventId]
+      properties:
+        throttleEventId: { type: string }
+        approvalRef: { type: string }
+
+    LiquidityCapResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LiquidityCap'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    LiquidityCapListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiquidityCap'
+        nextCursor:
+          type: string
+
+    LiquidityCapListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LiquidityCapListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    ThrottleEventResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ThrottleEvent'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ThrottleEventListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThrottleEvent'
+        nextCursor:
+          type: string
+
+    ThrottleEventListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ThrottleEventListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

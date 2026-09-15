@@ -1,0 +1,217 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Breaches API
+  version: 0.1.0
+  description: |
+    Shadow pricing / disclosure breaches, pause linkage, and parallel-channel fairness attestation (BR-11).
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: brc
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Breaches
+    description: Conduct breaches and fairness
+paths:
+  /v1/breaches:
+    get:
+      operationId: listBreaches
+      tags: [Breaches]
+      summary: List breach events
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: Breach desk }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./breaches.schemas.yaml#/components/schemas/BreachStatus
+        - name: distributorId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Breaches page
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/BreachEventListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: recordBreach
+      tags: [Breaches]
+      summary: Record breach event
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: BREACH_EVENT
+      x-dynamodb:
+        entityType: "BREACH_EVENT"
+        pkPatternTemplate: "BRC#${breachId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./breaches.schemas.yaml#/components/schemas/BreachEventCreate
+      responses:
+        '201':
+          description: Breach recorded
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/BreachEventResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/breaches/{breachId}:
+    parameters:
+      - name: breachId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getBreach
+      tags: [Breaches]
+      summary: Get breach event
+      security:
+        - bearerAuth: []
+      x-repository: BREACH_EVENT
+      x-dynamodb:
+        entityType: "BREACH_EVENT"
+        pkPatternTemplate: "BRC#${breachId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      responses:
+        '200':
+          description: Breach
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/BreachEventResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/breaches/{breachId}/remediate:
+    parameters:
+      - name: breachId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: remediateBreach
+      tags: [Breaches]
+      summary: Mark breach remediated
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./breaches.schemas.yaml#/components/schemas/BreachRemediateRequest
+      responses:
+        '200':
+          description: Breach remediated
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/BreachEventResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/fairness/attestations:
+    get:
+      operationId: listFairnessAttestations
+      tags: [Breaches]
+      summary: List parallel-channel fairness attestations
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: Channel fairness }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Attestations
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/FairnessAttestationListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createFairnessAttestation
+      tags: [Breaches]
+      summary: Record fairness attestation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: FAIRNESS_ATTESTATION
+      x-dynamodb:
+        entityType: "FAIRNESS_ATTESTATION"
+        pkPatternTemplate: "FAIR#${attestationId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./breaches.schemas.yaml#/components/schemas/FairnessAttestationCreate
+      responses:
+        '201':
+          description: Attestation recorded
+          content:
+            application/json:
+              schema:
+                $ref: ./breaches.schemas.yaml#/components/schemas/FairnessAttestationResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

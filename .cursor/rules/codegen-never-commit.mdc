@@ -1,0 +1,12 @@
+---
+description: Never commit or push .codegen; bootstrap from scaffold instead
+alwaysApply: true
+---
+
+# `.codegen` must never be committed
+
+- Do **not** `git add`, commit, or push `.codegen/` (or nested `zero_codegen` tool trees).
+- `.codegen/` is listed in `.gitignore` as a safeguard; keep it that way.
+- OpenAPI bundles under `packages/openapi-core/src/.bundled/` are also gitignored — do not force-add them.
+- To obtain or refresh the tool locally: `pnpm bootstrap:codegen` (syncs from `ZERO_APPS_CODEGEN_SCAFFOLD` / `zero-apps-codegen-scaffold`, then `codegen:paths`, and rewrites scope to `@shelfline`).
+- Agents must never suggest committing `.codegen` "so CI works"; fix CI by running bootstrap instead.

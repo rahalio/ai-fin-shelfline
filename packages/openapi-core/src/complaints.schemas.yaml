@@ -1,0 +1,76 @@
+openapi: 3.1.0
+info:
+  title: Complaints schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    AccountableParty:
+      type: string
+      enum: [bank, distributor]
+    ComplaintStatus:
+      type: string
+      enum: [open, investigating, resolved]
+
+    ComplaintCase:
+      type: object
+      required: [id, distributorId, accountableParty, status]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        applicationId: { type: string }
+        accountableParty: { $ref: '#/components/schemas/AccountableParty' }
+        status: { $ref: '#/components/schemas/ComplaintStatus' }
+        narrative: { type: string }
+        assignee: { type: string }
+        openedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time }
+
+    ComplaintCaseCreate:
+      type: object
+      required: [distributorId, narrative]
+      properties:
+        distributorId: { type: string }
+        applicationId: { type: string }
+        narrative: { type: string, minLength: 1 }
+
+    ComplaintAssignRequest:
+      type: object
+      required: [assignee]
+      properties:
+        assignee: { type: string, minLength: 1 }
+
+    ComplaintCloseRequest:
+      type: object
+      required: [resolutionNote]
+      properties:
+        resolutionNote: { type: string, minLength: 1 }
+
+    ComplaintCaseResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ComplaintCase'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ComplaintCaseListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplaintCase'
+        nextCursor:
+          type: string
+
+    ComplaintCaseListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ComplaintCaseListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

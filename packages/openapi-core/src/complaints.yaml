@@ -1,0 +1,197 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Complaints API
+  version: 0.1.0
+  description: |
+    Complaint ownership and redress — open, list, assign, close with contract-derived accountability.
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: cmp
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Complaints
+    description: Complaint ownership and redress
+paths:
+  /v1/complaints:
+    get:
+      operationId: listComplaints
+      tags: [Complaints]
+      summary: List complaint cases
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: Complaints desk }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintStatus
+        - name: distributorId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Cases page
+          content:
+            application/json:
+              schema:
+                $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: openComplaint
+      tags: [Complaints]
+      summary: Open complaint case
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: COMPLAINT_CASE
+      x-dynamodb:
+        entityType: "COMPLAINT_CASE"
+        pkPatternTemplate: "CMP#${complaintId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseCreate
+      responses:
+        '201':
+          description: Case opened
+          content:
+            application/json:
+              schema:
+                $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/complaints/{complaintId}:
+    parameters:
+      - name: complaintId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getComplaint
+      tags: [Complaints]
+      summary: Get complaint case
+      security:
+        - bearerAuth: []
+      x-repository: COMPLAINT_CASE
+      x-dynamodb:
+        entityType: "COMPLAINT_CASE"
+        pkPatternTemplate: "CMP#${complaintId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      responses:
+        '200':
+          description: Case
+          content:
+            application/json:
+              schema:
+                $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/complaints/{complaintId}/assign:
+    parameters:
+      - name: complaintId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: assignComplaint
+      tags: [Complaints]
+      summary: Assign complaint investigator
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintAssignRequest
+      responses:
+        '200':
+          description: Case assigned
+          content:
+            application/json:
+              schema:
+                $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/complaints/{complaintId}/close:
+    parameters:
+      - name: complaintId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: closeComplaint
+      tags: [Complaints]
+      summary: Close complaint with resolution note
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: none
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCloseRequest
+      responses:
+        '200':
+          description: Case closed
+          content:
+            application/json:
+              schema:
+                $ref: ./complaints.schemas.yaml#/components/schemas/ComplaintCaseResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

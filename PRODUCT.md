@@ -130,8 +130,8 @@ flowchart TD
 
 ## OpenAPI skeleton
 
-Canonical HTTP surface lives in sibling [openapi.yaml](openapi.yaml). Summary:
+Canonical HTTP surface lives under [`packages/openapi-core/src/`](packages/openapi-core/src/) (one YAML per domain). Historical skeleton archived at [`docs/openapi-skeleton.yaml`](docs/openapi-skeleton.yaml). Summary:
 
-- **Base path:** `/v1/...`
+- **Base path:** `/v1/...` (identity at `/v0/...`)
 - **Auth:** `X-API-Key` for distributor integration; Bearer JWT for bank operators.
-- **Resource groups:** Skus, Distributors, Originations, Throttles, Telemetry, Complaints, Breaches.
+- **Domains:** identity, skus, distributors, originations, throttles, telemetry, complaints, breaches.

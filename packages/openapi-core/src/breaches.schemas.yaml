@@ -1,0 +1,116 @@
+openapi: 3.1.0
+info:
+  title: Breaches schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    BreachType:
+      type: string
+      enum: [shadowPricing, disclosureFailure, brandMisuse, dataLeakage]
+    BreachStatus:
+      type: string
+      enum: [open, remediated, escalated]
+
+    BreachEvent:
+      type: object
+      required: [id, distributorId, type, status]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        type: { $ref: '#/components/schemas/BreachType' }
+        status: { $ref: '#/components/schemas/BreachStatus' }
+        detail: { type: string }
+        detectedAt: { type: string, format: date-time }
+        pauseSuggested: { type: boolean }
+
+    BreachEventCreate:
+      type: object
+      required: [distributorId, type, detail]
+      properties:
+        distributorId: { type: string }
+        type: { $ref: '#/components/schemas/BreachType' }
+        detail: { type: string, minLength: 1 }
+
+    BreachRemediateRequest:
+      type: object
+      required: [remediationNote]
+      properties:
+        remediationNote: { type: string, minLength: 1 }
+
+    FairnessAttestation:
+      type: object
+      required: [id, attestedAt, attestedBy]
+      properties:
+        id: { type: string }
+        attestedAt: { type: string, format: date-time }
+        attestedBy: { type: string }
+        channelCompareNote: { type: string }
+        leakageFindings: { type: integer, minimum: 0 }
+
+    FairnessAttestationCreate:
+      type: object
+      required: [attestedBy]
+      properties:
+        attestedBy: { type: string, minLength: 1 }
+        channelCompareNote: { type: string }
+        leakageFindings: { type: integer, minimum: 0 }
+
+    BreachEventResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BreachEvent'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    BreachEventListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreachEvent'
+        nextCursor:
+          type: string
+
+    BreachEventListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BreachEventListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    FairnessAttestationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FairnessAttestation'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    FairnessAttestationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FairnessAttestation'
+        nextCursor:
+          type: string
+
+    FairnessAttestationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/FairnessAttestationListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

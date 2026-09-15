@@ -1,0 +1,1148 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const registerDistributor_Body = z
+  .object({
+    legalName: z.string().min(1),
+    channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+  })
+  .passthrough();
+const createDistributionContract_Body = z
+  .object({
+    skuId: z.string(),
+    revenueSharePct: z.number(),
+    manufacturingPrice: z.number().optional(),
+    brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+    complaintOwner: z.enum(['bank', 'distributor']),
+    recommendationBiasLimit: z.string().optional(),
+  })
+  .passthrough();
+const pauseDistributor_Body = z
+  .object({ reason: z.string().min(1), approvalRef: z.string().optional() })
+  .passthrough();
+const DistributorStatus = z.enum(['active', 'paused', 'pending', 'terminated']);
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const ChannelType = z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']);
+const Distributor = z
+  .object({
+    id: z.string(),
+    legalName: z.string(),
+    status: z.enum(['active', 'paused', 'pending', 'terminated']),
+    channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+    createdAt: z.string().datetime({ offset: true }).optional(),
+    updatedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .passthrough();
+const DistributorListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string(),
+          legalName: z.string(),
+          status: z.enum(['active', 'paused', 'pending', 'terminated']),
+          channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+          createdAt: z.string().datetime({ offset: true }).optional(),
+          updatedAt: z.string().datetime({ offset: true }).optional(),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const DistributorListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string(),
+              legalName: z.string(),
+              status: z.enum(['active', 'paused', 'pending', 'terminated']),
+              channelType: z.enum([
+                'fintech',
+                'bigtech',
+                'broker',
+                'bankDirect',
+              ]),
+              createdAt: z.string().datetime({ offset: true }).optional(),
+              updatedAt: z.string().datetime({ offset: true }).optional(),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const DistributorCreate = z
+  .object({
+    legalName: z.string().min(1),
+    channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+  })
+  .passthrough();
+const DistributorResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string(),
+        legalName: z.string(),
+        status: z.enum(['active', 'paused', 'pending', 'terminated']),
+        channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+        createdAt: z.string().datetime({ offset: true }).optional(),
+        updatedAt: z.string().datetime({ offset: true }).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const BrandOwner = z.enum(['bank', 'distributor', 'coBrand']);
+const ComplaintOwner = z.enum(['bank', 'distributor']);
+const ContractStatus = z.enum(['draft', 'active', 'amended', 'terminated']);
+const DistributionContract = z
+  .object({
+    id: z.string(),
+    distributorId: z.string(),
+    skuId: z.string(),
+    revenueSharePct: z.number(),
+    manufacturingPrice: z.number().optional(),
+    brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+    complaintOwner: z.enum(['bank', 'distributor']),
+    recommendationBiasLimit: z.string().optional(),
+    status: z.enum(['draft', 'active', 'amended', 'terminated']),
+    completenessScore: z.number().optional(),
+  })
+  .passthrough();
+const DistributionContractListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string(),
+          distributorId: z.string(),
+          skuId: z.string(),
+          revenueSharePct: z.number(),
+          manufacturingPrice: z.number().optional(),
+          brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+          complaintOwner: z.enum(['bank', 'distributor']),
+          recommendationBiasLimit: z.string().optional(),
+          status: z.enum(['draft', 'active', 'amended', 'terminated']),
+          completenessScore: z.number().optional(),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const DistributionContractListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string(),
+              distributorId: z.string(),
+              skuId: z.string(),
+              revenueSharePct: z.number(),
+              manufacturingPrice: z.number().optional(),
+              brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+              complaintOwner: z.enum(['bank', 'distributor']),
+              recommendationBiasLimit: z.string().optional(),
+              status: z.enum(['draft', 'active', 'amended', 'terminated']),
+              completenessScore: z.number().optional(),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const DistributionContractUpsert = z
+  .object({
+    skuId: z.string(),
+    revenueSharePct: z.number(),
+    manufacturingPrice: z.number().optional(),
+    brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+    complaintOwner: z.enum(['bank', 'distributor']),
+    recommendationBiasLimit: z.string().optional(),
+  })
+  .passthrough();
+const DistributionContractResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string(),
+        distributorId: z.string(),
+        skuId: z.string(),
+        revenueSharePct: z.number(),
+        manufacturingPrice: z.number().optional(),
+        brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+        complaintOwner: z.enum(['bank', 'distributor']),
+        recommendationBiasLimit: z.string().optional(),
+        status: z.enum(['draft', 'active', 'amended', 'terminated']),
+        completenessScore: z.number().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const PauseResumeRequest = z
+  .object({ reason: z.string().min(1), approvalRef: z.string().optional() })
+  .passthrough();
+
+export const schemas: any = {
+  registerDistributor_Body,
+  createDistributionContract_Body,
+  pauseDistributor_Body,
+  DistributorStatus,
+  Problem,
+  ChannelType,
+  Distributor,
+  DistributorListData,
+  ResponseMeta,
+  DistributorListResponse,
+  DistributorCreate,
+  DistributorResponse,
+  BrandOwner,
+  ComplaintOwner,
+  ContractStatus,
+  DistributionContract,
+  DistributionContractListData,
+  DistributionContractListResponse,
+  DistributionContractUpsert,
+  DistributionContractResponse,
+  PauseResumeRequest,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/distributors',
+    alias: 'listDistributors',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z
+          .enum(['active', 'paused', 'pending', 'terminated'])
+          .optional(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string(),
+                  legalName: z.string(),
+                  status: z.enum(['active', 'paused', 'pending', 'terminated']),
+                  channelType: z.enum([
+                    'fintech',
+                    'bigtech',
+                    'broker',
+                    'bankDirect',
+                  ]),
+                  createdAt: z.string().datetime({ offset: true }).optional(),
+                  updatedAt: z.string().datetime({ offset: true }).optional(),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/distributors',
+    alias: 'registerDistributor',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: registerDistributor_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            legalName: z.string(),
+            status: z.enum(['active', 'paused', 'pending', 'terminated']),
+            channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Idempotency key reuse with different body, or state conflict`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/distributors/:distributorId',
+    alias: 'getDistributor',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            legalName: z.string(),
+            status: z.enum(['active', 'paused', 'pending', 'terminated']),
+            channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/distributors/:distributorId/contracts',
+    alias: 'listDistributionContracts',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string(),
+                  distributorId: z.string(),
+                  skuId: z.string(),
+                  revenueSharePct: z.number(),
+                  manufacturingPrice: z.number().optional(),
+                  brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+                  complaintOwner: z.enum(['bank', 'distributor']),
+                  recommendationBiasLimit: z.string().optional(),
+                  status: z.enum(['draft', 'active', 'amended', 'terminated']),
+                  completenessScore: z.number().optional(),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/distributors/:distributorId/contracts',
+    alias: 'createDistributionContract',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createDistributionContract_Body,
+      },
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            distributorId: z.string(),
+            skuId: z.string(),
+            revenueSharePct: z.number(),
+            manufacturingPrice: z.number().optional(),
+            brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+            complaintOwner: z.enum(['bank', 'distributor']),
+            recommendationBiasLimit: z.string().optional(),
+            status: z.enum(['draft', 'active', 'amended', 'terminated']),
+            completenessScore: z.number().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/distributors/:distributorId/contracts/:contractId',
+    alias: 'getDistributionContract',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'contractId',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            distributorId: z.string(),
+            skuId: z.string(),
+            revenueSharePct: z.number(),
+            manufacturingPrice: z.number().optional(),
+            brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+            complaintOwner: z.enum(['bank', 'distributor']),
+            recommendationBiasLimit: z.string().optional(),
+            status: z.enum(['draft', 'active', 'amended', 'terminated']),
+            completenessScore: z.number().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/v1/distributors/:distributorId/contracts/:contractId',
+    alias: 'amendDistributionContract',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: createDistributionContract_Body,
+      },
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'contractId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            distributorId: z.string(),
+            skuId: z.string(),
+            revenueSharePct: z.number(),
+            manufacturingPrice: z.number().optional(),
+            brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+            complaintOwner: z.enum(['bank', 'distributor']),
+            recommendationBiasLimit: z.string().optional(),
+            status: z.enum(['draft', 'active', 'amended', 'terminated']),
+            completenessScore: z.number().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/distributors/:distributorId/contracts/:contractId/activate',
+    alias: 'activateDistributionContract',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'contractId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            distributorId: z.string(),
+            skuId: z.string(),
+            revenueSharePct: z.number(),
+            manufacturingPrice: z.number().optional(),
+            brandOwner: z.enum(['bank', 'distributor', 'coBrand']),
+            complaintOwner: z.enum(['bank', 'distributor']),
+            recommendationBiasLimit: z.string().optional(),
+            status: z.enum(['draft', 'active', 'amended', 'terminated']),
+            completenessScore: z.number().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/distributors/:distributorId/pause',
+    alias: 'pauseDistributor',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: pauseDistributor_Body,
+      },
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            legalName: z.string(),
+            status: z.enum(['active', 'paused', 'pending', 'terminated']),
+            channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/distributors/:distributorId/resume',
+    alias: 'resumeDistributor',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: pauseDistributor_Body,
+      },
+      {
+        name: 'distributorId',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string(),
+            legalName: z.string(),
+            status: z.enum(['active', 'paused', 'pending', 'terminated']),
+            channelType: z.enum(['fintech', 'bigtech', 'broker', 'bankDirect']),
+            createdAt: z.string().datetime({ offset: true }).optional(),
+            updatedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 422,
+        description: `Semantically invalid request (e.g. PACK_EMPTY)`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios(
+  'https://api.ddd-codegen-starter.local/v1',
+  endpoints
+);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

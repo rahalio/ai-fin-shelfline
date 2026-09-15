@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Telemetry API
+  version: 0.1.0
+  description: |
+    Margin and CAC scorecards by distributor/SKU/period for kill-or-scale decisions.
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: tel
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Telemetry
+    description: Margin and CAC scorecards
+paths:
+  /v1/telemetry/margin:
+    get:
+      operationId: listMarginSnapshots
+      tags: [Telemetry]
+      summary: List margin snapshots
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: Margin telemetry }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: distributorId
+          in: query
+          schema: { type: string }
+        - name: skuId
+          in: query
+          schema: { type: string }
+        - name: period
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Margin snapshots
+          content:
+            application/json:
+              schema:
+                $ref: ./telemetry.schemas.yaml#/components/schemas/MarginSnapshotListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/telemetry/cac:
+    get:
+      operationId: listCacReports
+      tags: [Telemetry]
+      summary: List CAC reports
+      security:
+        - bearerAuth: []
+      x-zero-ui:
+        label: { en: CAC telemetry }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: distributorId
+          in: query
+          schema: { type: string }
+        - name: period
+          in: query
+          schema: { type: string }
+        - name: segment
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: CAC reports
+          content:
+            application/json:
+              schema:
+                $ref: ./telemetry.schemas.yaml#/components/schemas/CacReportListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

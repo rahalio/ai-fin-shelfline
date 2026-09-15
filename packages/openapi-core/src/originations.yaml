@@ -1,0 +1,200 @@
+openapi: 3.1.0
+info:
+  title: Shelfline Originations API
+  version: 0.1.0
+  description: |
+    Partner-originated applications, adjudication decisions, and multi-platform exposure signals.
+  license:
+    name: Proprietary
+    url: https://shelfline.local/license
+  x-domain: org
+servers:
+  - url: https://api.shelfline.local
+    description: Local / Shelfline API
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+tags:
+  - name: Originations
+    description: Applications and adjudication
+paths:
+  /v1/originations:
+    get:
+      operationId: listOriginations
+      tags: [Originations]
+      summary: List origination applications
+      x-zero-ui:
+        label: { en: Originations }
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: status
+          in: query
+          schema:
+            $ref: ./originations.schemas.yaml#/components/schemas/ApplicationStatus
+        - name: distributorId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Applications page
+          content:
+            application/json:
+              schema:
+                $ref: ./originations.schemas.yaml#/components/schemas/OriginationApplicationListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: submitOrigination
+      tags: [Originations]
+      summary: Submit origination application
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: ORIGINATION
+      x-dynamodb:
+        entityType: "ORIGINATION"
+        pkPatternTemplate: "APP#${applicationId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./originations.schemas.yaml#/components/schemas/OriginationApplicationCreate
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: ./originations.schemas.yaml#/components/schemas/OriginationApplicationResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/originations/{applicationId}:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getOrigination
+      tags: [Originations]
+      summary: Get application
+      x-repository: ORIGINATION
+      x-dynamodb:
+        entityType: "ORIGINATION"
+        pkPatternTemplate: "APP#${applicationId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      responses:
+        '200':
+          description: Application
+          content:
+            application/json:
+              schema:
+                $ref: ./originations.schemas.yaml#/components/schemas/OriginationApplicationResponse
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/originations/{applicationId}/decision:
+    parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: decideOrigination
+      tags: [Originations]
+      summary: Record adjudication decision
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: ADJUDICATION_DECISION
+      x-dynamodb:
+        entityType: "ADJUDICATION_DECISION"
+        pkPatternTemplate: "APP#${applicationId}"
+        skPatternTemplate: "DECISION"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./originations.schemas.yaml#/components/schemas/AdjudicationDecisionCreate
+      responses:
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: ./originations.schemas.yaml#/components/schemas/AdjudicationDecisionResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/exposure-signals:
+    post:
+      operationId: ingestExposureSignal
+      tags: [Originations]
+      summary: Ingest multi-platform leverage signal
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      x-repository: EXPOSURE_SIGNAL
+      x-dynamodb:
+        entityType: "EXPOSURE_SIGNAL"
+        pkPatternTemplate: "EXP#${signalId}"
+        skPatternTemplate: "METADATA"
+        pkPattern: template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./originations.schemas.yaml#/components/schemas/ExposureSignalCreate
+      responses:
+        '201':
+          description: Signal ingested
+          content:
+            application/json:
+              schema:
+                $ref: ./originations.schemas.yaml#/components/schemas/ExposureSignalResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        'default':
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey
+    bearerAuth:
+      $ref: ./common/security.yaml#/components/securitySchemes/bearerAuth

@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Skus schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ProductFamily:
+      type: string
+      enum: [deposit, lending, payment]
+    SkuRole:
+      type: string
+      enum: [manufacturer, distributor, both]
+    SkuStatus:
+      type: string
+      enum: [draft, published, paused, retired]
+    AdjudicationMode:
+      type: string
+      enum: [bank, partner, dual]
+
+    ProductSku:
+      type: object
+      required: [id, name, productFamily, role, status]
+      properties:
+        id: { type: string }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        productFamily: { $ref: '#/components/schemas/ProductFamily' }
+        role: { $ref: '#/components/schemas/SkuRole' }
+        status: { $ref: '#/components/schemas/SkuStatus' }
+        adjudicationMode: { $ref: '#/components/schemas/AdjudicationMode' }
+        capitalConstraintId: { type: string }
+        liquidityCapId: { type: string }
+        manufacturingPrice: { type: number, format: double }
+        priceFloor: { type: number, format: double }
+        crossSubsidyDeclared: { type: boolean }
+        crossSubsidyNote: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ProductSkuCreate:
+      type: object
+      required: [name, productFamily, role]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        productFamily: { $ref: '#/components/schemas/ProductFamily' }
+        role: { $ref: '#/components/schemas/SkuRole' }
+        adjudicationMode: { $ref: '#/components/schemas/AdjudicationMode' }
+        manufacturingPrice: { type: number, format: double }
+        priceFloor: { type: number, format: double }
+        crossSubsidyDeclared: { type: boolean }
+        crossSubsidyNote: { type: string }
+
+    ProductSkuUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        adjudicationMode: { $ref: '#/components/schemas/AdjudicationMode' }
+        manufacturingPrice: { type: number, format: double }
+        priceFloor: { type: number, format: double }
+        crossSubsidyDeclared: { type: boolean }
+        crossSubsidyNote: { type: string }
+
+    CapitalConstraint:
+      type: object
+      required: [id, skuId, maxVolume, currency]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        maxVolume: { type: number, format: double }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        rwaWeightHint: { type: number, format: float }
+
+    CapitalConstraintUpsert:
+      type: object
+      required: [maxVolume, currency]
+      properties:
+        maxVolume: { type: number, format: double }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        rwaWeightHint: { type: number, format: float }
+
+    RateCard:
+      type: object
+      required: [id, skuId, rate, approvedMin, approvedMax]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        rate: { type: number, format: double }
+        approvedMin: { type: number, format: double }
+        approvedMax: { type: number, format: double }
+        effectiveFrom: { type: string, format: date-time }
+
+    RateCardUpsert:
+      type: object
+      required: [rate, approvedMin, approvedMax]
+      properties:
+        rate: { type: number, format: double }
+        approvedMin: { type: number, format: double }
+        approvedMax: { type: number, format: double }
+        effectiveFrom: { type: string, format: date-time }
+
+    PauseResumeRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+        approvalRef: { type: string }
+
+    ProductSkuResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductSku'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ProductSkuListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSku'
+        nextCursor:
+          type: string
+
+    ProductSkuListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductSkuListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    CapitalConstraintResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CapitalConstraint'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CapitalConstraintListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapitalConstraint'
+        nextCursor:
+          type: string
+
+    CapitalConstraintListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CapitalConstraintListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    RateCardResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RateCard'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    RateCardListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateCard'
+        nextCursor:
+          type: string
+
+    RateCardListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/RateCardListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

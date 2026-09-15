@@ -1,0 +1,164 @@
+openapi: 3.1.0
+info:
+  title: Originations schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ApplicationStatus:
+      type: string
+      enum: [submitted, pendingDecision, approved, declined, throttled, booked]
+    DecisionOutcome:
+      type: string
+      enum: [approved, declined, refer]
+    DecidedBy:
+      type: string
+      enum: [bank, partner, dual]
+
+    OriginationApplication:
+      type: object
+      required: [id, skuId, distributorId, status]
+      properties:
+        id: { type: string }
+        skuId: { type: string }
+        distributorId: { type: string }
+        amount: { type: number, format: double }
+        applicantRef: { type: string }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        createdAt: { type: string, format: date-time }
+
+    OriginationApplicationCreate:
+      type: object
+      required: [skuId, distributorId, amount, applicantRef]
+      properties:
+        skuId: { type: string }
+        distributorId: { type: string }
+        amount: { type: number, format: double }
+        applicantRef: { type: string }
+
+    AdjudicationDecision:
+      type: object
+      required: [id, applicationId, outcome, decidedBy]
+      properties:
+        id: { type: string }
+        applicationId: { type: string }
+        outcome: { $ref: '#/components/schemas/DecisionOutcome' }
+        decidedBy: { $ref: '#/components/schemas/DecidedBy' }
+        adverseActionCode: { type: string }
+        decidedAt: { type: string, format: date-time }
+
+    AdjudicationDecisionCreate:
+      type: object
+      required: [outcome, decidedBy]
+      properties:
+        outcome: { $ref: '#/components/schemas/DecisionOutcome' }
+        decidedBy: { $ref: '#/components/schemas/DecidedBy' }
+        adverseActionCode: { type: string }
+
+    ExposureSignal:
+      type: object
+      required: [id, applicantRef, totalLeverage]
+      properties:
+        id: { type: string }
+        applicantRef: { type: string }
+        totalLeverage: { type: number, format: double }
+        source: { type: string }
+        blocked: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    ExposureSignalCreate:
+      type: object
+      required: [applicantRef, totalLeverage]
+      properties:
+        applicantRef: { type: string }
+        totalLeverage: { type: number, format: double }
+        source: { type: string }
+
+    OriginationApplicationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/OriginationApplication'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    OriginationApplicationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OriginationApplication'
+        nextCursor:
+          type: string
+
+    OriginationApplicationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/OriginationApplicationListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    AdjudicationDecisionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdjudicationDecision'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AdjudicationDecisionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdjudicationDecision'
+        nextCursor:
+          type: string
+
+    AdjudicationDecisionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AdjudicationDecisionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    ExposureSignalResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ExposureSignal'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ExposureSignalListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExposureSignal'
+        nextCursor:
+          type: string
+
+    ExposureSignalListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ExposureSignalListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

@@ -1,0 +1,132 @@
+openapi: 3.1.0
+info:
+  title: Distributors schemas
+  version: 0.1.0
+paths: {}
+components:
+  schemas:
+    ChannelType:
+      type: string
+      enum: [fintech, bigtech, broker, bankDirect]
+    DistributorStatus:
+      type: string
+      enum: [active, paused, pending, terminated]
+    BrandOwner:
+      type: string
+      enum: [bank, distributor, coBrand]
+    ComplaintOwner:
+      type: string
+      enum: [bank, distributor]
+    ContractStatus:
+      type: string
+      enum: [draft, active, amended, terminated]
+
+    Distributor:
+      type: object
+      required: [id, legalName, status, channelType]
+      properties:
+        id: { type: string }
+        legalName: { type: string }
+        status: { $ref: '#/components/schemas/DistributorStatus' }
+        channelType: { $ref: '#/components/schemas/ChannelType' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DistributorCreate:
+      type: object
+      required: [legalName, channelType]
+      properties:
+        legalName: { type: string, minLength: 1 }
+        channelType: { $ref: '#/components/schemas/ChannelType' }
+
+    DistributionContract:
+      type: object
+      required: [id, distributorId, skuId, revenueSharePct, brandOwner, complaintOwner, status]
+      properties:
+        id: { type: string }
+        distributorId: { type: string }
+        skuId: { type: string }
+        revenueSharePct: { type: number, format: float }
+        manufacturingPrice: { type: number, format: double }
+        brandOwner: { $ref: '#/components/schemas/BrandOwner' }
+        complaintOwner: { $ref: '#/components/schemas/ComplaintOwner' }
+        recommendationBiasLimit: { type: string }
+        status: { $ref: '#/components/schemas/ContractStatus' }
+        completenessScore: { type: number, format: float }
+
+    DistributionContractUpsert:
+      type: object
+      required: [skuId, revenueSharePct, brandOwner, complaintOwner]
+      properties:
+        skuId: { type: string }
+        revenueSharePct: { type: number, format: float }
+        manufacturingPrice: { type: number, format: double }
+        brandOwner: { $ref: '#/components/schemas/BrandOwner' }
+        complaintOwner: { $ref: '#/components/schemas/ComplaintOwner' }
+        recommendationBiasLimit: { type: string }
+
+    PauseResumeRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+        approvalRef: { type: string }
+
+    DistributorResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Distributor'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DistributorListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distributor'
+        nextCursor:
+          type: string
+
+    DistributorListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DistributorListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+
+    DistributionContractResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DistributionContract'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    DistributionContractListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionContract'
+        nextCursor:
+          type: string
+
+    DistributionContractListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DistributionContractListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
